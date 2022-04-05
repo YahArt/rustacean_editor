@@ -108,27 +108,6 @@ impl epi::App for TemplateApp {
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {
-            if cfg!(feature = "syntect") {
-                ui.horizontal(|ui| {
-                    ui.label("Language:");
-                    ui.text_edit_singleline(language);
-                });
-                ui.horizontal_wrapped(|ui| {
-                    ui.spacing_mut().item_spacing.x = 0.0;
-                    ui.label("Syntax highlighting powered by ");
-                    ui.hyperlink_to("syntect", "https://github.com/trishume/syntect");
-                    ui.label(".");
-                });
-            } else {
-                ui.horizontal_wrapped(|ui| {
-                    ui.spacing_mut().item_spacing.x = 0.0;
-                    ui.label("Compile the demo with the ");
-                    ui.code("syntax_highlighting");
-                    ui.label(" feature to enable more accurate syntax highlighting using ");
-                    ui.hyperlink_to("syntect", "https://github.com/trishume/syntect");
-                    ui.label(".");
-                });
-            }
             let mut theme = CodeTheme::from_memory(ui.ctx());
             ui.collapsing("Theme", |ui| {
                 ui.group(|ui| {

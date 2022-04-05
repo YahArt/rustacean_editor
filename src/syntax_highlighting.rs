@@ -188,8 +188,8 @@ impl CodeTheme {
         }
     }
 
-    pub fn ui(&mut self, ui: &mut egui::Ui) {
-        egui::widgets::global_dark_light_mode_buttons(ui);
+    pub fn ui(&mut self, ui: &mut eframe::egui::Ui) {
+        eframe::egui::widgets::global_dark_light_mode_buttons(ui);
 
         for theme in SyntectTheme::all() {
             if theme.is_dark() == self.dark_mode {
@@ -328,11 +328,11 @@ impl Highlighter {
             // Fallback:
             LayoutJob::simple(
                 code.into(),
-                egui::FontId::monospace(14.0),
+                eframe::egui::FontId::monospace(14.0),
                 if theme.dark_mode {
-                    egui::Color32::LIGHT_GRAY
+                    eframe::egui::Color32::LIGHT_GRAY
                 } else {
-                    egui::Color32::DARK_GRAY
+                    eframe::egui::Color32::DARK_GRAY
                 },
                 f32::INFINITY,
             )
@@ -352,7 +352,7 @@ impl Highlighter {
         let theme = theme.syntect_theme.syntect_key_name();
         let mut h = HighlightLines::new(syntax, &self.ts.themes[theme]);
 
-        use egui::text::{LayoutSection, TextFormat};
+        use eframe::egui::text::{LayoutSection, TextFormat};
 
         let mut job = LayoutJob {
             text: text.into(),
@@ -362,19 +362,19 @@ impl Highlighter {
         for line in LinesWithEndings::from(text) {
             for (style, range) in h.highlight(line, &self.ps) {
                 let fg = style.foreground;
-                let text_color = egui::Color32::from_rgb(fg.r, fg.g, fg.b);
+                let text_color = eframe::egui::Color32::from_rgb(fg.r, fg.g, fg.b);
                 let italics = style.font_style.contains(FontStyle::ITALIC);
                 let underline = style.font_style.contains(FontStyle::ITALIC);
                 let underline = if underline {
-                    egui::Stroke::new(1.0, text_color)
+                    eframe::egui::Stroke::new(1.0, text_color)
                 } else {
-                    egui::Stroke::none()
+                    eframe::egui::Stroke::none()
                 };
                 job.sections.push(LayoutSection {
                     leading_space: 0.0,
                     byte_range: as_byte_range(text, range),
                     format: TextFormat {
-                        font_id: egui::FontId::monospace(14.0),
+                        font_id: eframe::egui::FontId::monospace(14.0),
                         color: text_color,
                         italics,
                         underline,
