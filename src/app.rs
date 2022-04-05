@@ -15,6 +15,7 @@ pub struct TemplateApp {
 
     language: String,
     code: String,
+    font_size: f32,
 }
 
 impl Default for TemplateApp {
@@ -25,6 +26,7 @@ impl Default for TemplateApp {
             row: 0,
             col: 0,
             language: "rs".into(),
+            font_size: 32.0,
             code: "// A very simple example\n\
                     fn main() {\n\
 \tprintln!(\"Hello world!\");\n\
@@ -71,6 +73,7 @@ impl epi::App for TemplateApp {
             col,
             language,
             code,
+            font_size,
         } = self;
 
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
@@ -105,16 +108,15 @@ impl epi::App for TemplateApp {
                 ui.label(row_message.to_owned());
                 ui.label(col_message.to_owned());
             });
+
+            // Toggle buttons for themes...
+            eframe::egui::widgets::global_dark_light_mode_buttons(ui);
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {
             let mut theme = CodeTheme::from_memory(ui.ctx());
-            ui.collapsing("Theme", |ui| {
-                ui.group(|ui| {
-                    theme.ui(ui);
-                    theme.clone().store_in_memory(ui.ctx());
-                });
-            });
+            theme.ui(ui);
+            theme.clone().store_in_memory(ui.ctx());
             let mut layouter = |ui: &egui::Ui, string: &str, wrap_width: f32| {
                 let mut layout_job =
                     crate::syntax_highlighting::highlight(ui.ctx(), &theme, string, language);
@@ -126,7 +128,7 @@ impl epi::App for TemplateApp {
                     egui::TextEdit::multiline(code)
                         .font(egui::TextStyle::Monospace) // for cursor height
                         .code_editor()
-                        .desired_rows(10)
+                        .desired_rows(20)
                         .lock_focus(true)
                         .desired_width(f32::INFINITY)
                         .layouter(&mut layouter),

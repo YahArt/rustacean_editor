@@ -237,67 +237,17 @@ impl CodeTheme {
     pub fn ui(&mut self, ui: &mut eframe::egui::Ui) {
         ui.horizontal_top(|ui| {
             let selected_id = eframe::egui::Id::null();
-            let mut selected_tt: TokenType = *ui
+            let selected_tt: TokenType = *ui
                 .data()
                 .get_persisted_mut_or(selected_id, TokenType::Comment);
 
-            ui.vertical(|ui| {
-                ui.set_width(150.0);
-                eframe::egui::widgets::global_dark_light_mode_buttons(ui);
-
-                ui.add_space(8.0);
-                ui.separator();
-                ui.add_space(8.0);
-
-                ui.scope(|ui| {
-                    for (tt, tt_name) in [
-                        (TokenType::Comment, "// comment"),
-                        (TokenType::Keyword, "keyword"),
-                        (TokenType::Literal, "literal"),
-                        (TokenType::StringLiteral, "\"string literal\""),
-                        (TokenType::Punctuation, "punctuation ;"),
-                        // (TokenType::Whitespace, "whitespace"),
-                    ] {
-                        let format = &mut self.formats[tt];
-                        ui.style_mut().override_font_id = Some(format.font_id.clone());
-                        ui.visuals_mut().override_text_color = Some(format.color);
-                        ui.radio_value(&mut selected_tt, tt, tt_name);
-                    }
-                });
-
-                let reset_value = if self.dark_mode {
-                    CodeTheme::dark()
-                } else {
-                    CodeTheme::light()
-                };
-
-                if ui
-                    .add_enabled(
-                        *self != reset_value,
-                        eframe::egui::Button::new("Reset theme"),
-                    )
-                    .clicked()
-                {
-                    *self = reset_value;
-                }
-            });
-
-            ui.add_space(16.0);
+            if self.dark_mode {
+                CodeTheme::dark()
+            } else {
+                CodeTheme::light()
+            };
 
             ui.data().insert_persisted(selected_id, selected_tt);
-
-            eframe::egui::Frame::group(ui.style())
-                .margin(eframe::egui::Vec2::splat(2.0))
-                .show(ui, |ui| {
-                    // ui.group(|ui| {
-                    ui.style_mut().override_text_style = Some(eframe::egui::TextStyle::Small);
-                    ui.spacing_mut().slider_width = 128.0; // Controls color picker size
-                    eframe::egui::widgets::color_picker::color_picker_color32(
-                        ui,
-                        &mut self.formats[selected_tt].color,
-                        eframe::egui::color_picker::Alpha::Opaque,
-                    );
-                });
         });
     }
 }
