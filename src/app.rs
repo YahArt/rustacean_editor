@@ -5,19 +5,21 @@ use eframe::{egui, epi};
 #[cfg_attr(feature = "persistence", serde(default))] // if we add new fields, give them default values when deserializing old state
 pub struct TemplateApp {
     // Example stuff:
-    label: String,
+    file_name: String,
 
     // this how you opt-out of serialization of a member
     #[cfg_attr(feature = "persistence", serde(skip))]
-    value: f32,
+    row: i32,
+    col: i32,
 }
 
 impl Default for TemplateApp {
     fn default() -> Self {
         Self {
             // Example stuff:
-            label: "Hello World!".to_owned(),
-            value: 2.7,
+            file_name: "[empty]".to_owned(),
+            row: 0,
+            col: 0,
         }
     }
 }
@@ -52,7 +54,11 @@ impl epi::App for TemplateApp {
     /// Called each time the UI needs repainting, which may be many times per second.
     /// Put your widgets into a `SidePanel`, `TopPanel`, `CentralPanel`, `Window` or `Area`.
     fn update(&mut self, ctx: &egui::Context, frame: &epi::Frame) {
-        // let Self { label, value } = self;
+        let Self {
+            file_name,
+            row,
+            col,
+        } = self;
 
         // Examples of how to create different panels and windows.
         // Pick whichever suits you.
@@ -62,6 +68,9 @@ impl epi::App for TemplateApp {
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             // The top panel is often a good place for a menu bar:
             egui::menu::bar(ui, |ui| {
+                if ui.button("Quit").clicked() {
+                    frame.quit();
+                }
                 ui.menu_button("File", |ui| {
                     if ui.button("Open").clicked() {
                         println!("File Open clicked...");
@@ -78,6 +87,15 @@ impl epi::App for TemplateApp {
                 if ui.button("Config").clicked() {
                     println!("Config clicked...");
                 }
+            });
+
+            ui.horizontal(|ui| {
+                let row_message = format!("Row: {}", row);
+                let col_message = format!("Col: {}", col);
+
+                ui.label(file_name.to_owned());
+                ui.label(row_message.to_owned());
+                ui.label(col_message.to_owned());
             });
         });
 
