@@ -3,6 +3,7 @@
 #![warn(clippy::all, rust_2018_idioms)]
 
 mod app;
+pub mod syntax_highlighting;
 pub use app::TemplateApp;
 
 // ----------------------------------------------------------------------------

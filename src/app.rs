@@ -1,3 +1,4 @@
+use crate::syntax_highlighting::CodeTheme;
 use eframe::{egui, epi};
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
@@ -11,6 +12,9 @@ pub struct TemplateApp {
     #[cfg_attr(feature = "persistence", serde(skip))]
     row: i32,
     col: i32,
+
+    language: String,
+    code: String,
 }
 
 impl Default for TemplateApp {
@@ -20,6 +24,13 @@ impl Default for TemplateApp {
             file_name: "[empty]".to_owned(),
             row: 0,
             col: 0,
+            language: "rs".into(),
+            code: "// A very simple example\n\
+                    fn main() {\n\
+\tprintln!(\"Hello world!\");\n\
+}\n\
+"
+            .into(),
         }
     }
 }
@@ -58,12 +69,9 @@ impl epi::App for TemplateApp {
             file_name,
             row,
             col,
+            language,
+            code,
         } = self;
-
-        // Examples of how to create different panels and windows.
-        // Pick whichever suits you.
-        // Tip: a good default choice is to just keep the `CentralPanel`.
-        // For inspiration and more examples, go to https://emilk.github.io/egui
 
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             // The top panel is often a good place for a menu bar:
@@ -100,6 +108,51 @@ impl epi::App for TemplateApp {
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {
+            if cfg!(feature = "syntect") {
+                ui.horizontal(|ui| {
+                    ui.label("Language:");
+                    ui.text_edit_singleline(language);
+                });
+                ui.horizontal_wrapped(|ui| {
+                    ui.spacing_mut().item_spacing.x = 0.0;
+                    ui.label("Syntax highlighting powered by ");
+                    ui.hyperlink_to("syntect", "https://github.com/trishume/syntect");
+                    ui.label(".");
+                });
+            } else {
+                ui.horizontal_wrapped(|ui| {
+                    ui.spacing_mut().item_spacing.x = 0.0;
+                    ui.label("Compile the demo with the ");
+                    ui.code("syntax_highlighting");
+                    ui.label(" feature to enable more accurate syntax highlighting using ");
+                    ui.hyperlink_to("syntect", "https://github.com/trishume/syntect");
+                    ui.label(".");
+                });
+            }
+            let mut theme = CodeTheme::from_memory(ui.ctx());
+            ui.collapsing("Theme", |ui| {
+                ui.group(|ui| {
+                    theme.ui(ui);
+                    theme.clone().store_in_memory(ui.ctx());
+                });
+            });
+            let mut layouter = |ui: &egui::Ui, string: &str, wrap_width: f32| {
+                let mut layout_job =
+                    crate::syntax_highlighting::highlight(ui.ctx(), &theme, string, language);
+                layout_job.wrap_width = wrap_width;
+                ui.fonts().layout_job(layout_job)
+            };
+            egui::ScrollArea::vertical().show(ui, |ui| {
+                ui.add(
+                    egui::TextEdit::multiline(code)
+                        .font(egui::TextStyle::Monospace) // for cursor height
+                        .code_editor()
+                        .desired_rows(10)
+                        .lock_focus(true)
+                        .desired_width(f32::INFINITY)
+                        .layouter(&mut layouter),
+                );
+            });
             egui::warn_if_debug_build(ui);
         });
     }
