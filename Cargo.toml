@@ -18,15 +18,12 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 eframe = "0.17.0" # Gives us egui, epi and web+native backends
 # feature "syntax_highlighting":
-syntect = { version = "4", optional = true, default-features = false, features = [
-  "default-fancy",
-] }
+syntect = "4.6.0"
 serde = { version = "1", features = ["derive"], optional = true }
 enum-map = { version = "2", features = ["serde"] }
 
 [features]
 default = []
-syntax_highlighting = ["syntect"]
 persistence = ["eframe/persistence", "serde"] # Enable if you want to persist app state on shutdown
 
 [profile.release]
