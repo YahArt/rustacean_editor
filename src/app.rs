@@ -1,5 +1,6 @@
 use crate::syntax_highlighting::CodeTheme;
 use eframe::{egui, epi};
+use std::collections::BTreeMap;
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[cfg_attr(feature = "persistence", derive(serde::Deserialize, serde::Serialize))]
@@ -15,7 +16,7 @@ pub struct TemplateApp {
 
     language: String,
     code: String,
-    font_size: f32,
+    font_size: i32,
 }
 
 impl Default for TemplateApp {
@@ -26,7 +27,7 @@ impl Default for TemplateApp {
             row: 0,
             col: 0,
             language: "rs".into(),
-            font_size: 32.0,
+            font_size: 32,
             code: "// A very simple example\n\
                     fn main() {\n\
 \tprintln!(\"Hello world!\");\n\
@@ -94,10 +95,6 @@ impl epi::App for TemplateApp {
                 if ui.button("About").clicked() {
                     println!("About clicked...");
                 }
-
-                if ui.button("Config").clicked() {
-                    println!("Config clicked...");
-                }
             });
 
             ui.horizontal(|ui| {
@@ -111,15 +108,21 @@ impl epi::App for TemplateApp {
 
             // Toggle buttons for themes...
             eframe::egui::widgets::global_dark_light_mode_buttons(ui);
+
+            // Add slider for changing font size
+            ui.add(egui::Slider::new(font_size, 16..=64).prefix("Font Size: "));
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {
-            let mut theme = CodeTheme::from_memory(ui.ctx());
-            theme.ui(ui);
-            theme.clone().store_in_memory(ui.ctx());
+            let theme = CodeTheme::from_memory(ui.ctx());
             let mut layouter = |ui: &egui::Ui, string: &str, wrap_width: f32| {
-                let mut layout_job =
-                    crate::syntax_highlighting::highlight(ui.ctx(), &theme, string, language);
+                let mut layout_job = crate::syntax_highlighting::highlight(
+                    ui.ctx(),
+                    &theme,
+                    string,
+                    language,
+                    font_size,
+                );
                 layout_job.wrap_width = wrap_width;
                 ui.fonts().layout_job(layout_job)
             };
@@ -128,6 +131,7 @@ impl epi::App for TemplateApp {
                     egui::TextEdit::multiline(code)
                         .font(egui::TextStyle::Monospace) // for cursor height
                         .code_editor()
+                        // TODO: Make rows dependent on number of lines in code file...
                         .desired_rows(20)
                         .lock_focus(true)
                         .desired_width(f32::INFINITY)

@@ -1,36 +1,21 @@
 use eframe::egui::text::LayoutJob;
 
-/// View some code with syntax highlighting and selection.
-pub fn code_view_ui(ui: &mut eframe::egui::Ui, mut code: &str) {
-    let language = "rs";
-    let theme = CodeTheme::from_memory(ui.ctx());
-
-    let mut layouter = |ui: &eframe::egui::Ui, string: &str, _wrap_width: f32| {
-        let layout_job = highlight(ui.ctx(), &theme, string, language);
-        // layout_job.wrap.max_width = wrap_width; // no wrapping
-        ui.fonts().layout_job(layout_job)
-    };
-
-    ui.add(
-        eframe::egui::TextEdit::multiline(&mut code)
-            .font(eframe::egui::TextStyle::Monospace) // for cursor height
-            .code_editor()
-            .desired_rows(1)
-            .lock_focus(true)
-            .layouter(&mut layouter),
-    );
-}
-
 /// Memoized Code highlighting
 pub fn highlight(
     ctx: &eframe::egui::Context,
     theme: &CodeTheme,
     code: &str,
     language: &str,
+    font_size: &i32,
 ) -> LayoutJob {
-    impl eframe::egui::util::cache::ComputerMut<(&CodeTheme, &str, &str), LayoutJob> for Highlighter {
-        fn compute(&mut self, (theme, code, lang): (&CodeTheme, &str, &str)) -> LayoutJob {
-            self.highlight(theme, code, lang)
+    impl eframe::egui::util::cache::ComputerMut<(&CodeTheme, &str, &str, &i32), LayoutJob>
+        for Highlighter
+    {
+        fn compute(
+            &mut self,
+            (theme, code, lang, font_size): (&CodeTheme, &str, &str, &i32),
+        ) -> LayoutJob {
+            self.highlight(theme, code, lang, font_size)
         }
     }
 
@@ -38,7 +23,7 @@ pub fn highlight(
 
     let mut memory = ctx.memory();
     let highlight_cache = memory.caches.cache::<HighlightCache<'_>>();
-    highlight_cache.get((theme, code, language))
+    highlight_cache.get((theme, code, language, font_size))
 }
 
 // ----------------------------------------------------------------------------
@@ -166,16 +151,6 @@ impl CodeTheme {
             syntect_theme: SyntectTheme::SolarizedLight,
         }
     }
-
-    pub fn ui(&mut self, ui: &mut eframe::egui::Ui) {
-        eframe::egui::widgets::global_dark_light_mode_buttons(ui);
-
-        for theme in SyntectTheme::all() {
-            if theme.is_dark() == self.dark_mode {
-                ui.radio_value(&mut self.syntect_theme, theme, theme.name());
-            }
-        }
-    }
 }
 
 // ----------------------------------------------------------------------------
@@ -196,23 +171,30 @@ impl Default for Highlighter {
 
 impl Highlighter {
     #[allow(clippy::unused_self, clippy::unnecessary_wraps)]
-    fn highlight(&self, theme: &CodeTheme, code: &str, lang: &str) -> LayoutJob {
-        self.highlight_impl(theme, code, lang).unwrap_or_else(|| {
-            // Fallback:
-            LayoutJob::simple(
-                code.into(),
-                eframe::egui::FontId::monospace(14.0),
-                if theme.dark_mode {
-                    eframe::egui::Color32::LIGHT_GRAY
-                } else {
-                    eframe::egui::Color32::DARK_GRAY
-                },
-                f32::INFINITY,
-            )
-        })
+    fn highlight(&self, theme: &CodeTheme, code: &str, lang: &str, font_size: &i32) -> LayoutJob {
+        self.highlight_impl(theme, code, lang, font_size)
+            .unwrap_or_else(|| {
+                // Fallback:
+                LayoutJob::simple(
+                    code.into(),
+                    eframe::egui::FontId::monospace(*font_size as f32),
+                    if theme.dark_mode {
+                        eframe::egui::Color32::LIGHT_GRAY
+                    } else {
+                        eframe::egui::Color32::DARK_GRAY
+                    },
+                    f32::INFINITY,
+                )
+            })
     }
 
-    fn highlight_impl(&self, theme: &CodeTheme, text: &str, language: &str) -> Option<LayoutJob> {
+    fn highlight_impl(
+        &self,
+        theme: &CodeTheme,
+        text: &str,
+        language: &str,
+        font_size: &i32,
+    ) -> Option<LayoutJob> {
         use syntect::easy::HighlightLines;
         use syntect::highlighting::FontStyle;
         use syntect::util::LinesWithEndings;
@@ -247,7 +229,7 @@ impl Highlighter {
                     leading_space: 0.0,
                     byte_range: as_byte_range(text, range),
                     format: TextFormat {
-                        font_id: eframe::egui::FontId::monospace(14.0),
+                        font_id: eframe::egui::FontId::monospace(*font_size as f32),
                         color: text_color,
                         italics,
                         underline,
