@@ -1,6 +1,5 @@
 use crate::syntax_highlighting::CodeTheme;
 use eframe::{egui, epi};
-use std::collections::BTreeMap;
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[cfg_attr(feature = "persistence", derive(serde::Deserialize, serde::Serialize))]
