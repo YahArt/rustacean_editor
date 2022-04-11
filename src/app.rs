@@ -1,5 +1,5 @@
 use crate::syntax_highlighting::CodeTheme;
-use eframe::{egui, epi};
+use eframe::{egui, egui::FontData, egui::FontDefinitions, egui::FontFamily, epi};
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[cfg_attr(feature = "persistence", derive(serde::Deserialize, serde::Serialize))]
@@ -55,6 +55,29 @@ impl epi::App for TemplateApp {
         if let Some(storage) = _storage {
             *self = epi::get_value(storage, epi::APP_KEY).unwrap_or_default()
         }
+        let mut fonts = FontDefinitions::default();
+
+        // Install my own font (maybe supporting non-latin characters):
+        fonts.font_data.insert(
+            "my_font".to_owned(),
+            FontData::from_static(include_bytes!("fonts/FiraCode-Regular.ttf")),
+        ); // .ttf and .otf supported
+
+        // Put my font first (highest priority):
+        fonts
+            .families
+            .get_mut(&FontFamily::Proportional)
+            .unwrap()
+            .insert(0, "my_font".to_owned());
+
+        // Put my font as last fallback for monospace:
+        fonts
+            .families
+            .get_mut(&FontFamily::Monospace)
+            .unwrap()
+            .push("my_font".to_owned());
+
+        _ctx.set_fonts(fonts);
     }
 
     /// Called by the frame work to save state before shutdown.
