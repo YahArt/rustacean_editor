@@ -16,6 +16,9 @@ pub struct TemplateApp {
     language: String,
     code: String,
     font_size: i32,
+
+    dropped_files: Vec<egui::DroppedFile>,
+    picked_path: Option<String>,
 }
 
 impl Default for TemplateApp {
@@ -33,6 +36,8 @@ impl Default for TemplateApp {
 }\n\
 "
             .into(),
+            dropped_files: Vec::new(),
+            picked_path: Some("".to_owned()),
         }
     }
 }
@@ -97,6 +102,8 @@ impl epi::App for TemplateApp {
             language,
             code,
             font_size,
+            dropped_files,
+            picked_path,
         } = self;
 
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
@@ -107,7 +114,21 @@ impl epi::App for TemplateApp {
                 }
                 ui.menu_button("File", |ui| {
                     if ui.button("Open").clicked() {
-                        println!("File Open clicked...");
+                        let file_promise = poll_promise::Promise::spawn_async(async {
+                            rfd::AsyncFileDialog::new().pick_file().await
+                        });
+
+                        if let Some(result) = file_promise.ready() {
+                            match result {
+                                Some(file_handle) => {
+                                    *picked_path = Some(file_handle.path().display().to_string());
+                                    println!("Chosen file path : {:?}", picked_path);
+                                }
+                                None => {
+                                    println!("Something went wrong while selecting the file!");
+                                }
+                            };
+                        }
                     }
                     if ui.button("Save").clicked() {
                         println!("File Save clicked...");
@@ -162,5 +183,11 @@ impl epi::App for TemplateApp {
             });
             egui::warn_if_debug_build(ui);
         });
+
+        // Collect dropped files:
+        if !ctx.input().raw.dropped_files.is_empty() {
+            *dropped_files = ctx.input().raw.dropped_files.clone();
+            println!("Dropped files: {:?}", *dropped_files)
+        }
     }
 }

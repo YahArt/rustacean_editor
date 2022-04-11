@@ -7,6 +7,9 @@
 #[cfg(not(target_arch = "wasm32"))]
 fn main() {
     let app = rustacean_editor::TemplateApp::default();
-    let native_options = eframe::NativeOptions::default();
+    let native_options = eframe::NativeOptions {
+        drag_and_drop_support: true,
+        ..Default::default()
+    };
     eframe::run_native(Box::new(app), native_options);
 }

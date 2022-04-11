@@ -21,6 +21,9 @@ syntect = { version = "4", default-features = false, features = [
   "default-fancy",
 ] }
 serde = { version = "1", features = ["derive"], optional = true }
+rfd = "0.8"
+poll-promise = { version = "0.1", features = ["tokio"]}
+
 
 [features]
 default = []
