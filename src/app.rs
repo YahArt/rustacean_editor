@@ -1,24 +1,18 @@
 use crate::syntax_highlighting::CodeTheme;
 use eframe::{egui, egui::FontData, egui::FontDefinitions, egui::FontFamily, epi};
+use std::fs;
+use std::path::PathBuf;
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[cfg_attr(feature = "persistence", derive(serde::Deserialize, serde::Serialize))]
 #[cfg_attr(feature = "persistence", serde(default))] // if we add new fields, give them default values when deserializing old state
 pub struct TemplateApp {
-    // Example stuff:
-    file_name: String,
-
     // this how you opt-out of serialization of a member
     #[cfg_attr(feature = "persistence", serde(skip))]
-    row: i32,
-    col: i32,
-
     language: String,
     code: String,
     font_size: i32,
-
-    dropped_files: Vec<egui::DroppedFile>,
-    picked_path: Option<String>,
+    file_name: String,
 }
 
 impl TemplateApp {
@@ -43,22 +37,30 @@ impl TemplateApp {
             .insert(0, "custom_font".to_owned());
         _ctx.set_fonts(fonts);
     }
+
+    fn read_file(&mut self, file_path: Option<PathBuf>) {
+        // Only allow certain file types because of reasons...
+        println!("Got file {:?}", file_path);
+        match file_path {
+            Some(file_path) => {
+                self.file_name = file_path.display().to_string();
+                self.code = fs::read_to_string(self.file_name.clone())
+                    .expect("Something went wrong reading the file");
+            }
+            None => println!("No valid file path provided..."),
+        }
+    }
 }
 
 impl Default for TemplateApp {
     fn default() -> Self {
         Self {
-            // Example stuff:
-            file_name: "[empty]".to_owned(),
-            row: 0,
-            col: 0,
-            language: "rs".into(),
+            file_name: String::from("[empty]"),
+            language: String::from("rs"),
             font_size: 32,
             code: "// Time to write some code...\n\
                     fn main() {}"
                 .into(),
-            dropped_files: Vec::new(),
-            picked_path: None,
         }
     }
 }
@@ -76,7 +78,6 @@ impl epi::App for TemplateApp {
         _storage: Option<&dyn epi::Storage>,
     ) {
         // Load previous app state (if any).
-        // Note that you must enable the `persistence` feature for this to work.
         #[cfg(feature = "persistence")]
         if let Some(storage) = _storage {
             *self = epi::get_value(storage, epi::APP_KEY).unwrap_or_default()
@@ -85,26 +86,13 @@ impl epi::App for TemplateApp {
     }
 
     /// Called by the frame work to save state before shutdown.
-    /// Note that you must enable the `persistence` feature for this to work.
     #[cfg(feature = "persistence")]
     fn save(&mut self, storage: &mut dyn epi::Storage) {
         epi::set_value(storage, epi::APP_KEY, self);
     }
 
     /// Called each time the UI needs repainting, which may be many times per second.
-    /// Put your widgets into a `SidePanel`, `TopPanel`, `CentralPanel`, `Window` or `Area`.
     fn update(&mut self, ctx: &egui::Context, frame: &epi::Frame) {
-        let Self {
-            file_name,
-            row,
-            col,
-            language,
-            code,
-            font_size,
-            dropped_files,
-            picked_path,
-        } = self;
-
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             // The top panel is often a good place for a menu bar:
             egui::menu::bar(ui, |ui| {
@@ -116,10 +104,11 @@ impl epi::App for TemplateApp {
                 #[cfg(not(target_arch = "wasm32"))]
                 ui.menu_button("File", |ui| {
                     if ui.button("Open").clicked() {
-                        if let Some(path) = rfd::FileDialog::new().pick_file() {
-                            self.picked_path = Some(path.display().to_string());
-                            println!("Open file {:?}", self.picked_path);
-                        }
+                        self.read_file(
+                            rfd::FileDialog::new()
+                                .add_filter("rust", &["rs"])
+                                .pick_file(),
+                        );
                     }
                     if ui.button("Save").clicked() {
                         println!("File Save clicked...");
@@ -132,19 +121,14 @@ impl epi::App for TemplateApp {
             });
 
             ui.horizontal(|ui| {
-                let row_message = format!("Row: {}", row);
-                let col_message = format!("Col: {}", col);
-
-                ui.label(file_name.to_owned());
-                ui.label(row_message.to_owned());
-                ui.label(col_message.to_owned());
+                ui.label(self.file_name.clone());
             });
 
             // Toggle buttons for themes...
             eframe::egui::widgets::global_dark_light_mode_buttons(ui);
 
             // Add slider for changing font size
-            ui.add(egui::Slider::new(font_size, 16..=64).prefix("Font Size: "));
+            ui.add(egui::Slider::new(&mut self.font_size, 16..=64).prefix("Font Size: "));
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {
@@ -154,15 +138,15 @@ impl epi::App for TemplateApp {
                     ui.ctx(),
                     &theme,
                     string,
-                    language,
-                    font_size,
+                    &self.language.clone(),
+                    &self.font_size.clone(),
                 );
                 layout_job.wrap_width = wrap_width;
                 ui.fonts().layout_job(layout_job)
             };
             egui::ScrollArea::vertical().show(ui, |ui| {
                 ui.add(
-                    egui::TextEdit::multiline(code)
+                    egui::TextEdit::multiline(&mut self.code)
                         .font(egui::TextStyle::Monospace)
                         .code_editor()
                         .desired_rows(20)
@@ -176,8 +160,8 @@ impl epi::App for TemplateApp {
 
         // Collect dropped files:
         if !ctx.input().raw.dropped_files.is_empty() {
-            *dropped_files = ctx.input().raw.dropped_files.clone();
-            println!("Dropped files: {:?}", *dropped_files)
+            let dropped_files = ctx.input().raw.dropped_files.clone();
+            self.read_file(dropped_files.first().unwrap().path.clone())
         }
     }
 }
