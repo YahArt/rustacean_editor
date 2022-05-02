@@ -20,6 +20,30 @@ pub struct TemplateApp {
     dropped_files: Vec<egui::DroppedFile>,
 }
 
+impl TemplateApp {
+    fn setup_custom_font(&self, _ctx: &egui::Context) {
+        let mut fonts = FontDefinitions::default();
+        fonts.font_data.insert(
+            "custom_font".to_owned(),
+            FontData::from_static(include_bytes!("fonts/FiraCode-Regular.ttf")), // .ttf and .otf supported
+        );
+
+        // Put custom font first for proportional and monospace fonts (highest priority):
+        fonts
+            .families
+            .get_mut(&FontFamily::Proportional)
+            .unwrap()
+            .insert(0, "custom_font".to_owned());
+
+        fonts
+            .families
+            .get_mut(&FontFamily::Monospace)
+            .unwrap()
+            .insert(0, "custom_font".to_owned());
+        _ctx.set_fonts(fonts);
+    }
+}
+
 impl Default for TemplateApp {
     fn default() -> Self {
         Self {
@@ -29,13 +53,10 @@ impl Default for TemplateApp {
             col: 0,
             language: "rs".into(),
             font_size: 32,
-            code: "// A very simple example\n\
-                    fn main() {\n\
-\tprintln!(\"Hello world!\");\n\
-}\n\
-"
-            .into(),
-            dropped_files: Vec::new()
+            code: "// Time to write some code...\n\
+                    fn main() {}"
+                .into(),
+            dropped_files: Vec::new(),
         }
     }
 }
@@ -58,29 +79,7 @@ impl epi::App for TemplateApp {
         if let Some(storage) = _storage {
             *self = epi::get_value(storage, epi::APP_KEY).unwrap_or_default()
         }
-        let mut fonts = FontDefinitions::default();
-
-        // Install my own font (maybe supporting non-latin characters):
-        fonts.font_data.insert(
-            "my_font".to_owned(),
-            FontData::from_static(include_bytes!("fonts/FiraCode-Regular.ttf")),
-        ); // .ttf and .otf supported
-
-        // Put my font first (highest priority):
-        fonts
-            .families
-            .get_mut(&FontFamily::Proportional)
-            .unwrap()
-            .insert(0, "my_font".to_owned());
-
-        // Put my font as last fallback for monospace:
-        fonts
-            .families
-            .get_mut(&FontFamily::Monospace)
-            .unwrap()
-            .push("my_font".to_owned());
-
-        _ctx.set_fonts(fonts);
+        self.setup_custom_font(_ctx);
     }
 
     /// Called by the frame work to save state before shutdown.
@@ -109,7 +108,13 @@ impl epi::App for TemplateApp {
                 if ui.button("Quit").clicked() {
                     frame.quit();
                 }
+
+                // On the web target we do not support any file related things
+                #[cfg(not(target_arch = "wasm32"))]
                 ui.menu_button("File", |ui| {
+                    if ui.button("Open").clicked() {
+                        println!("File Open clicked...");
+                    }
                     if ui.button("Save").clicked() {
                         println!("File Save clicked...");
                     }
@@ -152,9 +157,8 @@ impl epi::App for TemplateApp {
             egui::ScrollArea::vertical().show(ui, |ui| {
                 ui.add(
                     egui::TextEdit::multiline(code)
-                        .font(egui::TextStyle::Monospace) // for cursor height
+                        .font(egui::TextStyle::Monospace)
                         .code_editor()
-                        // TODO: Make rows dependent on number of lines in code file...
                         .desired_rows(20)
                         .lock_focus(true)
                         .desired_width(f32::INFINITY)
