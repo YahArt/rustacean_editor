@@ -18,6 +18,7 @@ pub struct TemplateApp {
     font_size: i32,
 
     dropped_files: Vec<egui::DroppedFile>,
+    picked_path: Option<String>,
 }
 
 impl TemplateApp {
@@ -57,6 +58,7 @@ impl Default for TemplateApp {
                     fn main() {}"
                 .into(),
             dropped_files: Vec::new(),
+            picked_path: None,
         }
     }
 }
@@ -100,6 +102,7 @@ impl epi::App for TemplateApp {
             code,
             font_size,
             dropped_files,
+            picked_path,
         } = self;
 
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
@@ -113,7 +116,10 @@ impl epi::App for TemplateApp {
                 #[cfg(not(target_arch = "wasm32"))]
                 ui.menu_button("File", |ui| {
                     if ui.button("Open").clicked() {
-                        println!("File Open clicked...");
+                        if let Some(path) = rfd::FileDialog::new().pick_file() {
+                            self.picked_path = Some(path.display().to_string());
+                            println!("Open file {:?}", self.picked_path);
+                        }
                     }
                     if ui.button("Save").clicked() {
                         println!("File Save clicked...");
