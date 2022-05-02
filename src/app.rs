@@ -40,12 +40,26 @@ impl TemplateApp {
 
     fn read_file(&mut self, file_path: Option<PathBuf>) {
         // Only allow certain file types because of reasons...
-        println!("Got file {:?}", file_path);
+        println!("Load file {:?}", file_path);
         match file_path {
             Some(file_path) => {
                 self.file_name = file_path.display().to_string();
                 self.code = fs::read_to_string(self.file_name.clone())
                     .expect("Something went wrong reading the file");
+            }
+            None => println!("No valid file path provided..."),
+        }
+    }
+
+    fn save_file(&mut self, file_path: Option<PathBuf>) {
+        // Only allow certain file types because of reasons...
+        println!("Save file {:?}", file_path);
+        match file_path {
+            Some(file_path) => {
+                let file_name = file_path.display().to_string();
+                let file_content = self.code.clone();
+                fs::write(file_name, file_content)
+                    .expect("Something wrent wrong while saving file");
             }
             None => println!("No valid file path provided..."),
         }
@@ -111,13 +125,13 @@ impl epi::App for TemplateApp {
                         );
                     }
                     if ui.button("Save").clicked() {
-                        println!("File Save clicked...");
+                        self.save_file(
+                            rfd::FileDialog::new()
+                                .add_filter("rust", &["rs"])
+                                .save_file(),
+                        )
                     }
                 });
-
-                if ui.button("About").clicked() {
-                    println!("About clicked...");
-                }
             });
 
             ui.horizontal(|ui| {
