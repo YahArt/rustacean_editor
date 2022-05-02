@@ -53,6 +53,8 @@ impl TemplateApp {
         }
     }
 
+    // On the web target we do not support any file related things
+    #[cfg(not(target_arch = "wasm32"))]
     fn save_file(&mut self, file_path: Option<PathBuf>) {
         println!("Save file {:?}", file_path);
         match file_path {
@@ -108,6 +110,7 @@ impl epi::App for TemplateApp {
 
     /// Called each time the UI needs repainting, which may be many times per second.
     fn update(&mut self, ctx: &egui::Context, _frame: &epi::Frame) {
+        println!("Update is being called...");
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             // The top panel is often a good place for a menu bar:
             egui::menu::bar(ui, |ui| {
