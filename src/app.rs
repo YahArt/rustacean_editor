@@ -3,14 +3,16 @@ use eframe::{egui, egui::FontData, egui::FontDefinitions, egui::FontFamily, epi}
 use std::fs;
 use std::path::PathBuf;
 
+const SUPPORTED_FONT_SIZES: [i32; 5] = [16, 18, 20, 22, 24];
+
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[cfg_attr(feature = "persistence", derive(serde::Deserialize, serde::Serialize))]
 #[cfg_attr(feature = "persistence", serde(default))] // if we add new fields, give them default values when deserializing old state
 pub struct TemplateApp {
-    // this how you opt-out of serialization of a member
     #[cfg_attr(feature = "persistence", serde(skip))]
-    language: String,
     code: String,
+
+    language: String,
     font_size: i32,
     file_name: String,
 }
@@ -52,7 +54,6 @@ impl TemplateApp {
     }
 
     fn save_file(&mut self, file_path: Option<PathBuf>) {
-        // Only allow certain file types because of reasons...
         println!("Save file {:?}", file_path);
         match file_path {
             Some(file_path) => {
@@ -71,7 +72,7 @@ impl Default for TemplateApp {
         Self {
             file_name: String::from("[empty]"),
             language: String::from("rs"),
-            font_size: 32,
+            font_size: SUPPORTED_FONT_SIZES[0],
             code: "// Time to write some code...\n\
                     fn main() {}"
                 .into(),
@@ -106,14 +107,10 @@ impl epi::App for TemplateApp {
     }
 
     /// Called each time the UI needs repainting, which may be many times per second.
-    fn update(&mut self, ctx: &egui::Context, frame: &epi::Frame) {
+    fn update(&mut self, ctx: &egui::Context, _frame: &epi::Frame) {
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             // The top panel is often a good place for a menu bar:
             egui::menu::bar(ui, |ui| {
-                if ui.button("Quit").clicked() {
-                    frame.quit();
-                }
-
                 // On the web target we do not support any file related things
                 #[cfg(not(target_arch = "wasm32"))]
                 ui.menu_button("File", |ui| {
@@ -132,17 +129,24 @@ impl epi::App for TemplateApp {
                         )
                     }
                 });
+
+                ui.menu_button("Config", |ui| {
+                    ui.menu_button("Font Size", |ui| {
+                        for font_size in SUPPORTED_FONT_SIZES {
+                            if ui.button(format!("Font Size:{}", font_size)).clicked() {
+                                self.font_size = font_size;
+                            }
+                        }
+                    });
+                });
+
+                eframe::egui::widgets::global_dark_light_mode_buttons(ui);
             });
 
             ui.horizontal(|ui| {
+                ui.label("Current File: ");
                 ui.label(self.file_name.clone());
             });
-
-            // Toggle buttons for themes...
-            eframe::egui::widgets::global_dark_light_mode_buttons(ui);
-
-            // Add slider for changing font size
-            ui.add(egui::Slider::new(&mut self.font_size, 16..=64).prefix("Font Size: "));
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {
@@ -158,6 +162,7 @@ impl epi::App for TemplateApp {
                 layout_job.wrap_width = wrap_width;
                 ui.fonts().layout_job(layout_job)
             };
+
             egui::ScrollArea::vertical().show(ui, |ui| {
                 ui.add(
                     egui::TextEdit::multiline(&mut self.code)
