@@ -46,45 +46,12 @@ impl SyntectTheme {
 #[serde(default)]
 pub struct CodeTheme {
     dark_mode: bool,
-
     syntect_theme: SyntectTheme,
 }
 
 impl Default for CodeTheme {
     fn default() -> Self {
         Self::dark()
-    }
-}
-
-impl CodeTheme {
-    pub fn from_style(style: &eframe::egui::Style) -> Self {
-        if style.visuals.dark_mode {
-            Self::dark()
-        } else {
-            Self::light()
-        }
-    }
-
-    pub fn from_memory(ctx: &eframe::egui::Context) -> Self {
-        if ctx.style().visuals.dark_mode {
-            ctx.data()
-                .get_persisted(eframe::egui::Id::new("dark"))
-                .unwrap_or_else(CodeTheme::dark)
-        } else {
-            ctx.data()
-                .get_persisted(eframe::egui::Id::new("light"))
-                .unwrap_or_else(CodeTheme::light)
-        }
-    }
-
-    pub fn store_in_memory(self, ctx: &eframe::egui::Context) {
-        if self.dark_mode {
-            ctx.data()
-                .insert_persisted(eframe::egui::Id::new("dark"), self);
-        } else {
-            ctx.data()
-                .insert_persisted(eframe::egui::Id::new("light"), self);
-        }
     }
 }
 

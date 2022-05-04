@@ -14,10 +14,14 @@ pub struct TemplateApp {
     language: String,
     font_size: i32,
     file_name: String,
+    is_dark_theme: bool,
+
+    #[serde(skip)]
+    theme: CodeTheme,
 }
 
 impl TemplateApp {
-    fn setup_custom_font(&self, _ctx: &egui::Context) {
+    fn setup_custom_font(&mut self, _ctx: &egui::Context) {
         let mut fonts = FontDefinitions::default();
         fonts.font_data.insert(
             "custom_font".to_owned(),
@@ -50,6 +54,16 @@ impl TemplateApp {
         }
     }
 
+    fn apply_theme(&mut self, _ctx: &egui::Context) {
+        if self.is_dark_theme {
+            self.theme = CodeTheme::dark();
+            _ctx.set_visuals(egui::Visuals::dark());
+        } else {
+            self.theme = CodeTheme::light();
+            _ctx.set_visuals(egui::Visuals::light());
+        }
+    }
+
     // On the web target we do not support any file related things
     #[cfg(not(target_arch = "wasm32"))]
     fn save_file(&mut self, file_path: Option<PathBuf>) {
@@ -75,6 +89,8 @@ impl Default for TemplateApp {
             code: "// Time to write some code...\n\
                     fn main() {}"
                 .into(),
+            is_dark_theme: true,
+            theme: CodeTheme::default(),
         }
     }
 }
@@ -95,6 +111,7 @@ impl epi::App for TemplateApp {
         if let Some(storage) = _storage {
             *self = epi::get_value(storage, epi::APP_KEY).unwrap_or_default();
         }
+        self.apply_theme(_ctx);
         self.setup_custom_font(_ctx);
     }
 
@@ -135,9 +152,23 @@ impl epi::App for TemplateApp {
                             }
                         }
                     });
-                });
 
-                eframe::egui::widgets::global_dark_light_mode_buttons(ui);
+                    ui.menu_button("Themes", |ui| {
+                        if ui
+                            .radio_value(&mut self.is_dark_theme, true, "Dark Theme")
+                            .clicked()
+                        {
+                            self.apply_theme(ui.ctx());
+                        }
+
+                        if ui
+                            .radio_value(&mut self.is_dark_theme, false, "Light Theme")
+                            .clicked()
+                        {
+                            self.apply_theme(ui.ctx());
+                        }
+                    });
+                });
             });
 
             ui.horizontal(|ui| {
@@ -147,11 +178,10 @@ impl epi::App for TemplateApp {
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {
-            let theme = CodeTheme::from_memory(ui.ctx());
             let mut layouter = |ui: &egui::Ui, string: &str, wrap_width: f32| {
                 let mut layout_job = crate::syntax_highlighting::highlight(
                     ui.ctx(),
-                    &theme,
+                    &self.theme,
                     string,
                     &self.language.clone(),
                     &self.font_size.clone(),
