@@ -3,10 +3,21 @@
 ## What is it?
 A very basic editor written in Rust with the awesome egui library to explore immediate mode guis. This project was made with the awesome egui template which can be found [here](https://github.com/emilk/eframe_template).
 
+## :smile: Screenshots :smile:
+![MainWindow](./screenshots/main_window.png)
+![DarkTheme](./screenshots/dark_theme.png)
+![ChangeFontSize](./screenshots/change_font_size.png)
+
 ## :warning: Important information :warning:
 Some stuff does not work properly yet:
 * File related stuff does not work on WASM target
 * Changing the font size only affects the text inside the editor window and not the global font size
+
+## :relaxed: What does work (potentially) :relaxed:
+* Opening files (via Menu option or via drag and drop)
+* Saving Files
+* Changing font size (code editor only)
+* Changing themes (light and dark theme only)
 
 ## Prerequisites
 On Linux you need to first run:
