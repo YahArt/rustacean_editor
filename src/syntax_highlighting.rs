@@ -27,8 +27,7 @@ pub fn highlight(
 }
 
 // ----------------------------------------------------------------------------
-#[derive(Clone, Copy, Hash, PartialEq)]
-#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
+#[derive(Clone, Copy, Hash, PartialEq, serde::Deserialize, serde::Serialize)]
 enum SyntectTheme {
     Base16MochaDark,
     SolarizedLight,
@@ -43,9 +42,8 @@ impl SyntectTheme {
     }
 }
 
-#[derive(Clone, Hash, PartialEq)]
-#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
-#[cfg_attr(feature = "serde", serde(default))]
+#[derive(Clone, Hash, PartialEq, serde::Deserialize, serde::Serialize)]
+#[serde(default)]
 pub struct CodeTheme {
     dark_mode: bool,
 

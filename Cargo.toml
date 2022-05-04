@@ -16,15 +16,15 @@ path = "src/main.rs"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-eframe = "0.17.0" # Gives us egui, epi and web+native backends
+egui = "0.17.0"
+eframe = { version = "0.17.0", features = ["persistence"] }
+serde = { version = "1", features = ["derive"] }
 syntect = { version = "4", default-features = false, features = [
   "default-fancy",
 ] }
-serde = { version = "1", features = ["derive"], optional = true }
 
 [features]
 default = []
-persistence = ["eframe/persistence", "serde"] # Enable if you want to persist app state on shutdown
 
 [profile.release]
 opt-level = 2 # fast and small wasm

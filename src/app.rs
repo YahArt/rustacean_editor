@@ -6,10 +6,9 @@ use std::path::PathBuf;
 const SUPPORTED_FONT_SIZES: [i32; 5] = [16, 18, 20, 22, 24];
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
-#[cfg_attr(feature = "persistence", derive(serde::Deserialize, serde::Serialize))]
-#[cfg_attr(feature = "persistence", serde(default))] // if we add new fields, give them default values when deserializing old state
+#[derive(serde::Deserialize, serde::Serialize)]
+#[serde(default)] // if we add new fields, give them default values when deserializing old state
 pub struct TemplateApp {
-    #[cfg_attr(feature = "persistence", serde(skip))]
     code: String,
 
     language: String,
@@ -41,8 +40,6 @@ impl TemplateApp {
     }
 
     fn read_file(&mut self, file_path: Option<PathBuf>) {
-        // Only allow certain file types because of reasons...
-        println!("Load file {:?}", file_path);
         match file_path {
             Some(file_path) => {
                 self.file_name = file_path.display().to_string();
@@ -95,22 +92,19 @@ impl epi::App for TemplateApp {
         _storage: Option<&dyn epi::Storage>,
     ) {
         // Load previous app state (if any).
-        #[cfg(feature = "persistence")]
         if let Some(storage) = _storage {
-            *self = epi::get_value(storage, epi::APP_KEY).unwrap_or_default()
+            *self = epi::get_value(storage, epi::APP_KEY).unwrap_or_default();
         }
         self.setup_custom_font(_ctx);
     }
 
     /// Called by the frame work to save state before shutdown.
-    #[cfg(feature = "persistence")]
     fn save(&mut self, storage: &mut dyn epi::Storage) {
         epi::set_value(storage, epi::APP_KEY, self);
     }
 
     /// Called each time the UI needs repainting, which may be many times per second.
     fn update(&mut self, ctx: &egui::Context, _frame: &epi::Frame) {
-        println!("Update is being called...");
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             // The top panel is often a good place for a menu bar:
             egui::menu::bar(ui, |ui| {
