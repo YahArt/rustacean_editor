@@ -147,9 +147,11 @@ impl epi::App for TemplateApp {
                 ui.menu_button("Config", |ui| {
                     ui.menu_button("Font Size", |ui| {
                         for font_size in SUPPORTED_FONT_SIZES {
-                            if ui.button(format!("Font Size:{}", font_size)).clicked() {
-                                self.font_size = font_size;
-                            }
+                            ui.radio_value(
+                                &mut self.font_size,
+                                font_size,
+                                format!("Font Size {}", font_size),
+                            );
                         }
                     });
 
