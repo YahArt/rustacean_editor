@@ -191,11 +191,12 @@ impl epi::App for TemplateApp {
             };
 
             egui::ScrollArea::vertical().show(ui, |ui| {
+                let rows = std::cmp::max(self.code.lines().count() as usize, 20);
                 ui.add(
                     egui::TextEdit::multiline(&mut self.code)
                         .font(egui::TextStyle::Monospace)
                         .code_editor()
-                        .desired_rows(20)
+                        .desired_rows(rows)
                         .lock_focus(true)
                         .desired_width(f32::INFINITY)
                         .layouter(&mut layouter),
